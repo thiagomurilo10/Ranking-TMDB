@@ -34,3 +34,6 @@ build/
 
 # Ignorar configurações locais
 src/main/resources/application.properties
+
+# macOS system files
+.DS_Store

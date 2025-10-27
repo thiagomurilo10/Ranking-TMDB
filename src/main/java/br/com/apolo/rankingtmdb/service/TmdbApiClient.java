@@ -1,6 +1,7 @@
 package br.com.apolo.rankingtmdb.service;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -9,7 +10,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Optional;
 
-
+@Service
 public class TmdbApiClient {
 
     @Value("${api.tmdb.token}")
@@ -19,11 +20,11 @@ public class TmdbApiClient {
         HttpClient client = HttpClient.newBuilder().build();
 
         //Criando o request
-        HttpRequest request =  HttpRequest
-                .newBuilder()
-                .uri(new URI(url))
+        HttpRequest request =  HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("accept", "application/json")
                 .header("Authorization", "Bearer " + token)
-                .GET()
+                .method("GET", HttpRequest.BodyPublishers.noBody())
                 .build();
 
         //Criando a response
