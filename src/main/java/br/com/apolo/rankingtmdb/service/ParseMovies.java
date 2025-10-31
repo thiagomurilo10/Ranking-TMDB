@@ -1,5 +1,7 @@
 package br.com.apolo.rankingtmdb.service;
 
+import br.com.apolo.rankingtmdb.model.Movie;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,7 +10,6 @@ public class ParseMovies {
     private static final String IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 
     // Extrai o array de filmes da resposta JSON
-
     public static String[] parseMovies(String json) {
         int resultsIndex = json.indexOf("\"results\":");
         if (resultsIndex == -1) {
@@ -26,7 +27,6 @@ public class ParseMovies {
         String moviesJson = json.substring(start + 1, end);
         String[] moviesArray = moviesJson.split("\\},\\{");
 
-        // Limpa chaves sobrando no início/fim
         for (int i = 0; i < moviesArray.length; i++) {
             moviesArray[i] = moviesArray[i].replaceAll("^\\{", "").replaceAll("\\}$", "");
         }
@@ -34,18 +34,16 @@ public class ParseMovies {
         return moviesArray;
     }
 
-    /**
-     * Extrai uma lista de valores de um determinado campo do array de filmes
-     */
+    //Metodo genérico para extrair um campo
+
     private static List<String> parseField(String[] moviesArray, String fieldName) {
         List<String> values = new ArrayList<>();
         for (String movie : moviesArray) {
             int index = movie.indexOf("\"" + fieldName + "\":");
             if (index == -1) continue;
 
-            int valueStart = index + fieldName.length() + 3; // posição logo após o ":"
+            int valueStart = index + fieldName.length() + 3;
 
-            // Verifica se começa com aspas (string) ou não (número)
             if (movie.charAt(valueStart) == '\"') {
                 int start = valueStart + 1;
                 int end = movie.indexOf("\"", start);
@@ -55,7 +53,6 @@ public class ParseMovies {
                     values.add("N/A");
                 }
             } else {
-                // campo numérico: pega até a próxima vírgula ou fim da string
                 int end = movie.indexOf(",", valueStart);
                 if (end == -1) end = movie.length();
                 values.add(movie.substring(valueStart, end).trim());
@@ -64,37 +61,29 @@ public class ParseMovies {
         return values;
     }
 
-    // Extrai títulos
-    public static List<String> parseTitles(String[] moviesArray) {
-        return parseField(moviesArray, "title");
-    }
+    //Novo metodo: retorna uma lista de objetos Movie
 
-    // Extrai poster_path e monta a URL completa
-    public static List<String> parseImages(String[] moviesArray) {
+    public static List<Movie> parseMoviesList(String json) {
+        List<Movie> movies = new ArrayList<>();
+
+        String[] moviesArray = parseMovies(json);
+        List<String> titles = parseField(moviesArray, "title");
         List<String> paths = parseField(moviesArray, "poster_path");
-        List<String> urls = new ArrayList<>();
-        for (String path : paths) {
-            urls.add(IMAGE_BASE_URL + path);
-        }
-        return urls;
-    }
-
-    // Extrai o ano de release_date
-    public static List<String> parseYears(String[] moviesArray) {
+        List<String> ratings = parseField(moviesArray, "vote_average");
         List<String> dates = parseField(moviesArray, "release_date");
-        List<String> years = new ArrayList<>();
-        for (String date : dates) {
-            if (date.length() >= 4) {
-                years.add(date.substring(0, 4)); // pega os 4 primeiros caracteres
-            } else {
-                years.add("N/A");
-            }
-        }
-        return years;
-    }
 
-    // Extrai vote_average
-    public static List<String> parseRatings(String[] moviesArray) {
-        return parseField(moviesArray, "vote_average");
+        for (int i = 0; i < titles.size(); i++) {
+            String title = titles.get(i);
+            String path = (i < paths.size()) ? paths.get(i) : "";
+            String rating = (i < ratings.size()) ? ratings.get(i) : "N/A";
+            String date = (i < dates.size()) ? dates.get(i) : "N/A";
+
+            String urlImage = IMAGE_BASE_URL + path;
+            String year = (date.length() >= 4) ? date.substring(0, 4) : "N/A";
+
+            movies.add(new Movie(title, urlImage, rating, year));
+        }
+
+        return movies;
     }
 }
